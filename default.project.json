@@ -1,0 +1,15 @@
+{
+    "name": "CollabVm",
+    "tree": {
+        "$className": "Folder",
+        
+        "$path": "src/CollabVM",
+
+        "Packages": {
+            "$path": "Packages/",
+            "CanvasDraw": {
+                "$path": "src/Static/CanvasDraw"
+            }
+        }
+    }
+}
