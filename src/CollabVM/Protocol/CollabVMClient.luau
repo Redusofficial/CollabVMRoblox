@@ -56,7 +56,7 @@ function CollabVMClient.new(url: string): Class
     self.unsubscribeCallbacks = {}
 
     self.socket.open:Connect(function() self:onOpen() end)
-    self.socket.message:Connect(function(self, message: string) self:onMessage(message) end)
+    self.socket.message:Connect(function(message: string) self:onMessage(message) end)
     self.socket.close:Connect(function() self.publicEmitter:emit("close") end)
 
     return self
@@ -116,7 +116,7 @@ function CollabVMClient:onMessage(message: string)
         return
     elseif MessageType == "chat" then
         for i = 2, #msgArr, 2 do
-            self.publicEmitter:emit('chat', msgArr[i], msgArr[i + 1])
+            self.publicEmitter:emit("chat", msgArr[i], msgArr[i + 1])
         end
         return
     elseif MessageType == "adduser" then
@@ -137,7 +137,7 @@ function CollabVMClient:onMessage(message: string)
                 _user = User.new(msgArr[i], tonumber(msgArr[i + 1]) or 0)
                 table.insert(self.users, _user)
             end
-            self.publicEmitter:emit('adduser', _user)
+            self.publicEmitter:emit("adduser", _user)
         end
     elseif MessageType == "remuser" then
 
@@ -169,7 +169,7 @@ function CollabVMClient:onMessage(message: string)
                 user.countryCode = countryCode
             end
         end
-        self.publicEmitter:emit('flag')
+        self.publicEmitter:emit("flag")
     end
 end
 

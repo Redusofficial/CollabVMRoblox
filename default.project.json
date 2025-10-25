@@ -13,6 +13,10 @@
             "Jpeg": {
                 "$path": "src/Static/Jpeg"
             }
+        },
+
+        "Confg": {
+            "$path": "Config.json"
         }
     }
 }

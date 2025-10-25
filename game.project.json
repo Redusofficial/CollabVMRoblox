@@ -9,6 +9,12 @@
       }
     },
 
+    "ServerScriptService": {
+      "Test": {
+        "$path": "src/Game/ServerScriptService/Test"
+      }
+    },
+
     "HttpService": {
       "$properties": {
         "HttpEnabled": true

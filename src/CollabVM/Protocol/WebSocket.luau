@@ -2,7 +2,6 @@ local HttpService = game:GetService("HttpService")
 
 local Root = script.Parent.Parent
 local Packages = Root.Packages
-local Types = Root.Types
 
 local Signal = require(Packages.signal)
 
@@ -60,6 +59,10 @@ function WebSocket.new(url: string): Class
     end)
 
     return self
+end
+
+function WebSocket:send(Data: string)
+    self.WebSocket:Send(Data)
 end
 
 function WebSocket:Destroy()
