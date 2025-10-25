@@ -4,7 +4,6 @@ local AssetService = game:GetService("AssetService")
 local Root = script.Parent.Parent
 local Protocol = Root.Protocol
 local Packages = Root.Packages
-local Types = Root.Types
 
 local Signal = require(Packages.signal)
 local msgpack = require(Packages["msgpack-luau"])
