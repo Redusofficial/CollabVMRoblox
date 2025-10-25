@@ -12,16 +12,13 @@ local CanvasDraw = require(Packages.CanvasDraw)
 
 local WebSocket = require(Protocol.WebSocket)
 
-
-local SignalTypes = require(Types.Signal)
-
 local CollabVMClient = {}
 CollabVMClient.__index = CollabVMClient
 
 export type Class = typeof(setmetatable({} :: {
     url: string,
-    internalEmitter: SignalTypes.Signal<string>,
-    publicEmitter: SignalTypes.Signal<any>,
+    internalEmitter: Signal.Signal<string>,
+    publicEmitter: Signal.Signal<any>,
     socket: WebSocket.Class
 }, CollabVMClient))
 

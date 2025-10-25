@@ -5,7 +5,6 @@ local Packages = Root.Packages
 local Types = Root.Types
 
 local Signal = require(Packages.signal)
-local SignalTypes = require(Types.Signal)
 
 local State = {
     CONNECTING = 0,
@@ -19,9 +18,9 @@ WebSocket.__index = WebSocket
 
 export type Class = typeof(setmetatable({} :: {
     WebSocket: WebStreamClient,
-    open: SignalTypes.Signal<>,
-    close: SignalTypes.Signal<>,
-    message: SignalTypes.Signal<buffer>,
+    open: Signal.Signal<>,
+    close: Signal.Signal<>,
+    message: Signal.Signal<string>,
     readyState: number
 }, WebSocket))
 
