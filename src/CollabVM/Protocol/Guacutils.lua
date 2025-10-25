@@ -1,64 +1,62 @@
-function decode(str: string): {string}
-    local pos = 0
-    local sections = {}
+local function decode(str: string): {string}?
+    local pos: number = -1
+    local sections: {string} = {}
 
     while true do
-        local len_end = string.find(str, '%.', pos + 1, true)
-
-        if not len_end then
+        local len: number = str:find('%.', pos + 2) or -1
+        if len == -1 then
             break
         end
 
-        local len_str = string.sub(str, pos + 1, len_end - 1)
+        local lengthStr: string = str:sub(pos + 2, len - 1)
+        local length: number = tonumber(lengthStr) or -1
+
+        if length == -1 then
+            return nil
+        end
         
-        local section_len = tonumber(len_str)
-        
-        if not section_len or section_len < 0 then
-            return {}
+        local nextPos: number = len + length
+
+        if nextPos >= str:len() and nextPos ~= str:len() then
+            return nil
         end
 
-        local end_pos = len_end + section_len
+        local content: string = str:sub(len + 1, nextPos)
+        table.insert(sections, content)
+        
+        pos = nextPos
 
-        if end_pos > #str then
-            return {}
-        end
+        local separator: string = str:sub(pos + 1, pos + 1)
 
-        local section_data = string.sub(str, len_end + 1, end_pos)
-
-        table.insert(sections, section_data)
-
-        pos = end_pos
-        local sep = string.sub(str, pos + 1, pos + 1)
-
-        if sep == ',' then
-            pos = pos + 1
+        if separator == ',' then
             continue
-        elseif sep == ';' then
+        elseif separator == ';' then
             break
         else
-            return {}
+            return nil
         end
     end
 
     return sections
 end
 
-function encode(stringArray: {string}): string
-	local command: string = ""
+local function encode(...: string): string
+    local strings: {string} = {...}
+    local command: {string} = {}
 
-	for i, current in ipairs(stringArray) do
-		local currentString: string = current
-		local length: number = #currentString
-		command = command .. length .. "." .. currentString
-
-		if i < #stringArray then
-			command = command .. ","
-		else
-			command = command .. ";"
-		end
-	end
-
-	return command
+    for i: number, current: string in ipairs(strings) do
+        local currentLength: number = current:len()
+        table.insert(command, currentLength .. '.')
+        table.insert(command, current)
+        
+        if i < #strings then
+            table.insert(command, ',')
+        else
+            table.insert(command, ';')
+        end
+    end
+    
+    return table.concat(command)
 end
 
 return {

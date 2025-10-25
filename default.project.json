@@ -9,6 +9,9 @@
             "$path": "Packages/",
             "CanvasDraw": {
                 "$path": "src/Static/CanvasDraw"
+            },
+            "Jpeg": {
+                "$path": "src/Static/Jpeg"
             }
         }
     }

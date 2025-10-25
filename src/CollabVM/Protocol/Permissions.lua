@@ -14,7 +14,7 @@ export type Permissions = typeof(setmetatable({} :: {
     xss: boolean,
 }, Permissions))
 
-function Permissions.new(mask): Class
+function Permissions.new(mask): Permissions
     local self = setmetatable({
         restore = false,
         reboot = false,
@@ -26,7 +26,7 @@ function Permissions.new(mask): Class
         rename = false,
         grabip = false,
         xss = false,
-    }, Permissions) :: Class
+    }, Permissions) :: Permissions
 
     self:set(mask)
 
