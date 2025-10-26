@@ -99,7 +99,7 @@ function CollabVMClient:onMessage(message: string)
         return
     end
 
-    self.publicEmitter:emit("message", unpack(msgArr))
+    self.publicEmitter:emit("message", msgArr)
 
     local MessageType = msgArr[1]
 
@@ -116,7 +116,7 @@ function CollabVMClient:onMessage(message: string)
         return
     elseif MessageType == "chat" then
         for i = 2, #msgArr, 2 do
-            self.publicEmitter:emit("chat", msgArr[i], msgArr[i + 1])
+            self.publicEmitter:emit("chat", {msgArr[i], msgArr[i + 1]})
         end
         return
     elseif MessageType == "adduser" then
@@ -134,17 +134,103 @@ function CollabVMClient:onMessage(message: string)
                 _user = userFound
                 _user.rank = tonumber(msgArr[i + 1])
             else
-                _user = User.new(msgArr[i], tonumber(msgArr[i + 1]) or 0)
+                _user = User.new(msgArr[i + 1], tonumber(msgArr[i]) or 0)
                 table.insert(self.users, _user)
             end
             self.publicEmitter:emit("adduser", _user)
         end
+        return
     elseif MessageType == "remuser" then
+        for i = 3, #msgArr do
+            local username = msgArr[i]
+            local userIndex = nil
+            local userToRemove = nil
+            for index, u in self.users do
+                if u.username == username then
+                    userIndex = index
+                    userToRemove = u
+                    break
+                end
+            end
 
+            if userToRemove ~= nil then
+                table.remove(self.users, userIndex)
+                self.publicEmitter:emit('remuser', userToRemove)
+            end
+        end
+        return
     elseif MessageType == "rename" then
 
     elseif MessageType == "turn" then
+        for _, user in self.users do
+            user.turn = -1
+        end
 
+        local queuedUsers = tonumber(msgArr[3]) or 0
+        if queuedUsers == 0 then
+            self.publicEmitter:emit('turn', {
+                user = nil,
+                queue = {},
+                turnTime = nil,
+                queueTime = nil
+            })
+            return
+        end
+
+        local currentTurn = nil
+        for _, user in ipairs(self.users) do
+            if user.username == msgArr[4] then
+                currentTurn = user
+                break
+            end
+        end
+        if currentTurn then
+            currentTurn.turn = 0
+        end
+
+        local queue = {}
+        if queuedUsers > 1 then
+            for i = 1, queuedUsers - 1 do
+                local user = nil
+                for _, u in ipairs(self.users) do
+                    if u.username == msgArr[i + 4] then
+                        user = u
+                        break
+                    end
+                end
+                if user then
+                    table.insert(queue, user)
+                    user.turn = i
+                end
+            end
+        end
+
+        local turnTime = nil
+        if currentTurn and currentTurn.username == self.username then
+            turnTime = tonumber(msgArr[2])
+        end
+
+        local queueTime = nil
+        local inQueue = false
+        for _, user in ipairs(queue) do
+            if user.username == self.username then
+                inQueue = true
+                break
+            end
+        end
+
+        if inQueue then
+            queueTime = tonumber(msgArr[#msgArr])
+        end
+
+        self.publicEmitter:emit('turn', {
+            user = currentTurn,
+            queue = queue,
+            turnTime = turnTime,
+            queueTime = queueTime
+        })
+
+        return
     elseif MessageType == "vote" then
 
     elseif MessageType == "auth" then
@@ -171,6 +257,7 @@ function CollabVMClient:onMessage(message: string)
         end
         self.publicEmitter:emit("flag")
     end
+    return
 end
 
 function CollabVMClient:send(...: string)

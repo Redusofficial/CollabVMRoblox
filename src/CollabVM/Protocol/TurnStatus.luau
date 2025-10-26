@@ -1,11 +1,10 @@
--- TurnStatus.lua
--- Enumeration representing turn status states
+local User = require(script.Parent.User)
 
-local TurnStatus = {
-    NONE = "none",
-    REQUESTED = "requested",
-    ASSIGNED = "assigned",
-    ENDED = "ended",
+export type TurnStatus = {
+	user: User.User?,
+	queue: {User.User},
+	turnTime: number?,
+	queueTime: number?
 }
 
-return TurnStatus
+return {}
