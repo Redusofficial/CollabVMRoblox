@@ -149,7 +149,7 @@ function CollabVMClient:onMessage(message: string)
     elseif MessageType == "adduser" then
         for i = 2, #msgArr - 1, 2 do
             local userFound
-            for _, u in ipairs(self.users) do
+            for _, u in self.users do
                 if u.username == msgArr[i] then
                     userFound = u
                     break
@@ -187,7 +187,41 @@ function CollabVMClient:onMessage(message: string)
         end
         return
     elseif MessageType == "rename" then
+        local selfrename: boolean = false
+        local oldusername: string? = nil
 
+        if msgArr[2] == "0" then
+            selfrename = true
+            oldusername = self.username
+
+            local status: string = msgArr[3]
+            if status == "1" then
+                self.publicEmitter:emit("renamestatus", "taken")
+            elseif status == "2" then
+                self.publicEmitter:emit("renamestatus", "invalid")
+            elseif status == "3" then
+                self.publicEmitter:emit("renamestatus", "blacklisted")
+            end
+
+            self.username = msgArr[4]
+        else
+            oldusername = msgArr[3]
+        end
+
+        local _user: User.User = nil
+        for _, u in ipairs(self.users) do
+            if u.username == oldusername then
+                _user = u
+                break
+            end
+        end
+
+        if _user then
+            _user.username = msgArr[4]
+        end
+
+        self.publicEmitter:emit("rename", oldusername :: string, msgArr[4], selfrename)
+        return
     elseif MessageType == "turn" then
         for _, user in self.users do
             user.turn = -1
@@ -205,7 +239,7 @@ function CollabVMClient:onMessage(message: string)
         end
 
         local currentTurn = nil
-        for _, user in ipairs(self.users) do
+        for _, user in self.users do
             if user.username == msgArr[4] then
                 currentTurn = user
                 break
@@ -219,7 +253,7 @@ function CollabVMClient:onMessage(message: string)
         if queuedUsers > 1 then
             for i = 1, queuedUsers - 1 do
                 local user = nil
-                for _, u in ipairs(self.users) do
+                for _, u in self.users do
                     if u.username == msgArr[i + 4] then
                         user = u
                         break
@@ -239,7 +273,7 @@ function CollabVMClient:onMessage(message: string)
 
         local queueTime = nil
         local inQueue = false
-        for _, user in ipairs(queue) do
+        for _, user in queue do
             if user.username == self.username then
                 inQueue = true
                 break
@@ -271,7 +305,7 @@ function CollabVMClient:onMessage(message: string)
             local username = msgArr[i]
             local countryCode = msgArr[i + 1]
             local user = nil
-            for _, u in ipairs(self.users) do
+            for _, u in self.users do
                 if u.username == username then
                     user = u
                     break
@@ -298,6 +332,10 @@ function CollabVMClient:send(...: string)
             guacElements[i] = tostring(el)
         end
     end
+
+    if Config.DEBUG then
+        print("Sending message:", guacElements)
+    end
     
     self.socket:send(Guacutils.encode(table.unpack(guacElements)))
 end
@@ -310,20 +348,30 @@ function CollabVMClient:close()
 end
 
 -- Public
-function CollabVMClient:connect(id: string, username: string?)
+function CollabVMClient:WaitForOpen()
     return Promise.new(function(resolve)
         local unsub: Emittery.Emittery_UnsubscribeFn
-        unsub = self.publicEmitter:on("open", function(success: boolean)
+
+        unsub = self:onInternal("open", function()
             unsub()
             resolve()
         end)
+    end)
+end
 
+function CollabVMClient:connect(id: string, username: string?)
+    return Promise.new(function(resolve)
+        local unsub: Emittery.Emittery_UnsubscribeFn
+        unsub = self:onInternal("connect", function(success: boolean)
+            unsub()
+            resolve(success)
+        end)
         if username == nil then
              self:send("rename")
         else
            self:send("rename", username) 
         end
-
+        if #DefaultCapabilities > 0 then self:send("cap", unpack(DefaultCapabilities)); end
         self:send("connect", id)
         self.node = id
     end)

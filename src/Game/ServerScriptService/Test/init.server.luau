@@ -25,3 +25,14 @@ end)
 Client.imageDecoded:Connect(function(Position: Vector2, Size: Vector2, Pixels: buffer)
 	Image:WritePixelsBuffer(Position, Size, Pixels)
 end)
+
+Client:WaitForOpen()
+
+local Connected = Client:connect("vm0b0t", "TestRoblox")
+
+if not Connected then
+	warn("Failed to connect to VM")
+	return
+end
+
+print(`Connected to VM as {Client.username}`)
