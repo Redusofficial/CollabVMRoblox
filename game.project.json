@@ -10,9 +10,8 @@
     },
 
     "ServerScriptService": {
-      "Test": {
-        "$path": "src/Game/ServerScriptService/Test"
-      }
+      "$ignoreUnknownInstances": true,
+      "$path": "src/Game/ServerScriptService/"
     },
 
     "HttpService": {

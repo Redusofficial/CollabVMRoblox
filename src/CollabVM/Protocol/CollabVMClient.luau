@@ -9,15 +9,21 @@ local Signal = require(Packages.signal)
 local msgpack = require(Packages["msgpack-luau"])
 local CanvasDraw = require(Packages.CanvasDraw)
 local Emittery = require(Packages.emittery)
+local Promise = require(Packages.promise)
 
 local Guacutils = require(Protocol.Guacutils)
 local WebSocket = require(Protocol.WebSocket)
 local User = require(Protocol.User)
 local Permissions = require(Protocol.Permissions)
 local BinaryProtocol = require(Protocol.BinaryProtocol)
+local JpegDecoder = require(Packages.Jpeg)
+
+local Config = require(Root.Confg)
 
 local Rank = Permissions.Rank
 local CollabVMProtocolMessage = BinaryProtocol.CollabVMProtocolMessage.CollabVMProtocolMessageType
+
+local DefaultCapabilities = { "bin" }
 
 local CollabVMClient = {}
 CollabVMClient.__index = CollabVMClient
@@ -29,8 +35,11 @@ export type Class = typeof(setmetatable({} :: {
     username: string?,
     rank: number,
     perms: Permissions.Permissions,
+    node: string?,
     internalEmitter: Emittery.Emittery,
     publicEmitter: Emittery.Emittery,
+    -- (Position: Vector2, Size: Vector2, Pixels: buffer)
+    imageDecoded: Signal.Signal<(Vector2, Vector2, buffer) -> nil>,
     socket: WebSocket.Class,
     unsubscribeCallbacks: {Emittery.Emittery_UnsubscribeFn},
 }, CollabVMClient))
@@ -49,6 +58,7 @@ function CollabVMClient.new(url: string): Class
     self.internalEmitter = Emittery.default.new()
     self.publicEmitter = Emittery.default.new()
 
+    self.imageDecoded = Signal.new()
     --self.editableImage = AssetService:Crea
 
     self.socket = WebSocket.new(url)
@@ -64,6 +74,7 @@ end
 
 function CollabVMClient:onOpen()
     self.internalEmitter:emit("open")
+    self.publicEmitter:emit("open")
 end
 
 function CollabVMClient:onBinaryMessage(data: string)
@@ -80,6 +91,22 @@ function CollabVMClient:onBinaryMessage(data: string)
 
     if msg.type == CollabVMProtocolMessage.rect then
         if not msg.rect or msg.rect.x == nil or msg.rect.y == nil or msg.rect.data == nil then return end
+
+        if Config.DEBUG and Config.DEBUG_DONTDECODEIMAGES then return end
+
+        -- Will mirror CollabVM implementation eventually, but send data out via imageDecoded for now.
+        local Image = JpegDecoder(buffer.tostring(msg.rect.data))
+
+        if not Image then
+            warn(`Failed to decode JPEG {msg.rect.x}, {msg.rect.y}`)
+            return
+        end
+
+        self.imageDecoded:Fire(
+            Vector2.new(msg.rect.x, msg.rect.y),
+            Vector2.new(Image.X, Image.Y),
+            Image.Data
+        )
     end
 end
 
@@ -280,6 +307,31 @@ function CollabVMClient:close()
         self.ws:close()
         self.ws = nil
     end
+end
+
+-- Public
+function CollabVMClient:connect(id: string, username: string?)
+    return Promise.new(function(resolve)
+        local unsub: Emittery.Emittery_UnsubscribeFn
+        unsub = self.publicEmitter:on("open", function(success: boolean)
+            unsub()
+            resolve()
+        end)
+
+        if username == nil then
+             self:send("rename")
+        else
+           self:send("rename", username) 
+        end
+
+        self:send("connect", id)
+        self.node = id
+    end)
+end
+-- Public end
+
+function CollabVMClient:onInternal(eventName: string, callback: (any) -> ()): Emittery.Emittery_UnsubscribeFn
+    return self.internalEmitter:on(eventName, callback)
 end
 
 function CollabVMClient:on(eventName: string, callback: (any) -> ()): Emittery.Emittery_UnsubscribeFn
