@@ -7,6 +7,7 @@
     - [x] Port enums and interfaces
     - [ ] Implement all messages in CollabVMClient.onMessage()
     - [ ] Multithread Jpeg decoder to improve performance
+    - [ ] Find a way to efficiently process and display images over 1024x1024
     - [ ] Prevent script timeouts when multiple images are recieved at once. This may be resolved by the multithreading TODO
 
 - [ ] GUI
